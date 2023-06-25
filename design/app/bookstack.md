@@ -13,7 +13,7 @@
 
 ## Prepare
 ```shell
-mkdir -p /opt/docker/app/bookstack/configs
+mkdir -p /opt/docker/app/bookstack/config
 mkdir -p /opt/docker/database/mysql-bs
 
 chown -R 1000:1000 /opt/docker/app
@@ -72,7 +72,7 @@ services:
     ports:
       - 80:80
     volumes:
-      - "${BASE_DIR}/app/bookstack/configs:/config"
+      - "${BASE_DIR}/app/bookstack/config:/config"
     environment:
       - "PUID=1000"
       - "PGID=1000"
