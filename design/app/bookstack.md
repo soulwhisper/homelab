@@ -64,7 +64,7 @@ services:
       test: "wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1"
       start_period: 1m
     depends_on:
-      - bookstack_db
+      - mysql-bs
     ports:
       - 6875:80
     volumes:
