@@ -18,6 +18,8 @@ mkdir -p /opt/docker/database/mysql-bs
 
 chown -R 1000:1000 /opt/docker/app
 chown -R 1001 /opt/docker/database
+
+echo "127.0.0.1 lib.homelab.arpa" >> /etc/hosts
 ```
 
 ## Env
@@ -74,7 +76,7 @@ services:
     environment:
       - "PUID=1000"
       - "PGID=1000"
-      - "APP_URL=https://lib.homelab.arpa"
+      - "APP_URL=http://lib.homelab.arpa"
       - "DB_HOST=mysql-bs"
       - "DB_PORT=3306"
       - "DB_USER=${DB_BOOKSTACK}"
