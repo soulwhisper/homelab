@@ -1,9 +1,15 @@
 # Bookstack
 - for self notes
 - for test, use "http://localhost:6875"
-- for real, use "https://lib.homelab.arpa"
 
-# Prepare
+## Production
+- for real, use "https://lib.homelab.arpa"
+- deploy with k8s
+- login with OIDC
+- storage with local_secure
+- caching with redis
+
+## Prepare
 ```shell
 mkdir -p /opt/docker/app/bookstack/configs
 mkdir -p /opt/docker/database/mysql-bs
@@ -12,7 +18,7 @@ chown -R 1000:1000 /opt/docker/app
 chown -R 1001 /opt/docker/database
 ```
 
-# Env
+## Env
 ```shell
 BASE_DIR=/opt/docker
 
@@ -25,7 +31,7 @@ VER_MARIADB=10.11-debian-11
 DB_BOOKSTACK=bookstack
 ```
 
-# Compose
+## Compose
 ```shell
 version: "3"
 
@@ -72,6 +78,9 @@ services:
       - "DB_USER=${DB_BOOKSTACK}"
       - "DB_PASS=${DB_BOOKSTACK}"
       - "DB_DATABASE=${DB_BOOKSTACK}"
+      - "CACHE_DRIVER=redis"
+      - "SESSION_DRIVER=redis"
+      - "REDIS_SERVERS=redis-bs"
       
   mysql-bs:
     <<: [*basics]
