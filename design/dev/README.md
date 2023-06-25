@@ -28,3 +28,5 @@
 - database migration from sql-server to pgsql, [ref](https://estuary.dev/sql-server-to-postgres/#capturing-data-from-sql-server-to-postgresql-using-ssis)
 - [firebase](https://github.com/jthegedus/awesome-firebase#readme)
 - [node-red](https://github.com/naimo84/awesome-nodered#readme)
+- [Build your own X](https://github.com/codecrafters-io/build-your-own-x)
+- [awesome-creative](https://github.com/j0hnm4r5/awesome-creative-technology#readme)
