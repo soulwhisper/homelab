@@ -15,10 +15,13 @@ chown -R 1001 /opt/docker/database
 # Env
 ```shell
 BASE_DIR=/opt/docker
+
 COMPOSE_SUBNET=192.168.112.0/20
 COMPOSE_GATEWAY=192.168.112.1
+
 VER_BOOKSTACK=23.05.2
 VER_MARIADB=10.11-debian-11
+
 DB_BOOKSTACK=bookstack
 ```
 
