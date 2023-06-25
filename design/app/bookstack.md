@@ -1,6 +1,8 @@
 # Bookstack
+- [Source-repo](https://github.com/BookStackApp/BookStack)
 - for self notes
 - for test, use "http://lib.homelab.arpa"
+- init_pass = admin@admin.com, password;
 
 ## Production
 - for real, use "https://lib.homelab.arpa"
