@@ -1,6 +1,6 @@
 # Bookstack
 - for self notes
-- for test, use "http://localhost:6875"
+- for test, use "http://lib.homelab.arpa"
 
 ## Production
 - for real, use "https://lib.homelab.arpa"
@@ -66,21 +66,18 @@ services:
     depends_on:
       - mysql-bs
     ports:
-      - 6875:80
+      - 80:80
     volumes:
       - "${BASE_DIR}/app/bookstack/configs:/config"
     environment:
       - "PUID=1000"
       - "PGID=1000"
- #     - "APP_URL=https://lib.homelab.arpa"
+      - "APP_URL=https://lib.homelab.arpa"
       - "DB_HOST=mysql-bs"
       - "DB_PORT=3306"
       - "DB_USER=${DB_BOOKSTACK}"
       - "DB_PASS=${DB_BOOKSTACK}"
       - "DB_DATABASE=${DB_BOOKSTACK}"
-      - "CACHE_DRIVER=redis"
-      - "SESSION_DRIVER=redis"
-      - "REDIS_SERVERS=redis-bs"
       
   mysql-bs:
     <<: [*basics]
@@ -93,7 +90,7 @@ services:
     environment:
       - "ALLOW_EMPTY_PASSWORD=yes"
       - "MARIADB_SKIP_TEST_DB=yes"
-      - "MARIADB_DATABASE=${DB_BOOKSTACK}"
       - "MARIADB_USER=${DB_BOOKSTACK}"
       - "MARIADB_PASSWORD=${DB_BOOKSTACK}"
+      - "MARIADB_DATABASE=${DB_BOOKSTACK}"
 ```
