@@ -41,11 +41,11 @@ nodes:
           busPath: "0*"
         dhcp: false
         mtu: 1500
-        addresses:
-          - 172.19.82.32/24
-        routes:
+        routes: &gateway
           - network: 0.0.0.0/0
             gateway: 172.19.82.1
+        addresses:
+          - 172.19.82.32/24
 
   - hostname: ${clusterName}-master-03
     ipAddress: 172.19.82.33
@@ -56,11 +56,9 @@ nodes:
           busPath: "0*"
         dhcp: false
         mtu: 1500
+        routes: *gateway
         addresses:
           - 172.19.82.33/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 172.19.82.1
 
   - hostname: ${clusterName}-worker-01
     ipAddress: 172.19.82.34
@@ -70,11 +68,9 @@ nodes:
       - deviceSelector:
           busPath: "0*"
         mtu: 1500
+        routes: *gateway
         addresses:
           - 172.19.82.34/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 172.19.82.1
 
   - hostname: ${clusterName}-worker-02
     ipAddress: 172.19.82.35
@@ -85,11 +81,9 @@ nodes:
           busPath: "0*"
         dhcp: false
         mtu: 1500
+        routes: *gateway
         addresses:
           - 172.19.82.35/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 172.19.82.1
 
   - hostname: ${clusterName}-worker-03
     ipAddress: 172.19.82.36
@@ -100,11 +94,9 @@ nodes:
           busPath: "0*"
         dhcp: false
         mtu: 1500
+        routes: *gateway
         addresses:
           - 172.19.82.36/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 172.19.82.1
 
 patches:
 # disable dhcp search domain
@@ -155,12 +147,14 @@ patches:
       proxy:
         disabled: true
 
-# ETCD configuration
+# Cluster network configuration
   - |-
     cluster:
-      etcd:
-        advertisedSubnets:
-          - 10.50.16.0/20
+      network:
+        podSubnets:
+          - 10.10.16.0/20
+        serviceSubnets:
+          - 10.10.32.0/20
 
 # Kubelet configuration
   - |-
@@ -170,7 +164,7 @@ patches:
           rotate-server-certificates: "true"
         nodeIP:
           validSubnets:
-            - 10.50.16.0/20
+            - 10.10.0.0/16
 
 # Custom sysctls
   - |-
@@ -283,6 +277,14 @@ controlPlane:
           - siderolabs/drbd
 
   patches:
+    # ETCD configuration
+    - |-
+      cluster:
+        etcd:
+          advertisedSubnets:
+            - 10.10.0.0/16
+
+    # Prepare for Rook-CEPH
     - |-
       - op: replace
         path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces
