@@ -1,0 +1,4 @@
+rootDomain: k8s.homelab.internal
+clusterName: talos-vmw
+clusterDomain: vmw
+clusterEndpointIP: 172.19.82.31
