@@ -1,0 +1,294 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
+clusterName: ${clusterName}
+endpoint: "https://${clusterDomain}.${rootDomain}:6443"
+domain: ${clusterDomain}.${rootDomain}
+
+talosVersion: v1.6.0
+kubernetesVersion: 1.29.0
+
+cniConfig:
+  name: none
+
+additionalApiServerCertSans: &san
+  - "127.0.0.1" # KubePrism
+  - ${clusterEndpointIP}
+  - ${clusterDomain}.${rootDomain}
+additionalMachineCertSans: *san
+
+nodes:
+  - hostname: ${clusterName}-master-01
+    ipAddress: 172.19.82.31
+    installDisk: /dev/sda
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          busPath: "0*"
+        dhcp: false
+        mtu: 1500
+        addresses:
+          - 172.19.82.31/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 172.19.82.1
+
+  - hostname: ${clusterName}-master-02
+    ipAddress: 172.19.82.32
+    installDisk: /dev/sda
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          busPath: "0*"
+        dhcp: false
+        mtu: 1500
+        addresses:
+          - 172.19.82.32/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 172.19.82.1
+
+  - hostname: ${clusterName}-master-03
+    ipAddress: 172.19.82.33
+    installDisk: /dev/sda
+    controlPlane: true
+    networkInterfaces:
+      - deviceSelector:
+          busPath: "0*"
+        dhcp: false
+        mtu: 1500
+        addresses:
+          - 172.19.82.33/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 172.19.82.1
+
+  - hostname: ${clusterName}-worker-01
+    ipAddress: 172.19.82.34
+    installDisk: /dev/sda
+    controlPlane: false
+    networkInterfaces:
+      - deviceSelector:
+          busPath: "0*"
+        mtu: 1500
+        addresses:
+          - 172.19.82.34/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 172.19.82.1
+
+  - hostname: ${clusterName}-worker-02
+    ipAddress: 172.19.82.35
+    installDisk: /dev/sda
+    controlPlane: false
+    networkInterfaces:
+      - deviceSelector:
+          busPath: "0*"
+        dhcp: false
+        mtu: 1500
+        addresses:
+          - 172.19.82.35/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 172.19.82.1
+
+  - hostname: ${clusterName}-worker-03
+    ipAddress: 172.19.82.36
+    installDisk: /dev/sda
+    controlPlane: false
+    networkInterfaces:
+      - deviceSelector:
+          busPath: "0*"
+        dhcp: false
+        mtu: 1500
+        addresses:
+          - 172.19.82.36/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 172.19.82.1
+
+patches:
+# disable dhcp search domain
+  - |-
+    machine:
+      network:
+        disableSearchDomain: true
+
+# Force nameserver
+  - |-
+    machine:
+      network:
+        nameservers:
+          - 172.19.82.10
+
+# Configure NTP
+  - |-
+    machine:
+      time:
+        servers:
+          - time.apple.com
+          - time.cloudflare.com
+
+# Enable KubePrism
+  - |-
+    machine:
+      features:
+        kubePrism:
+          enabled: true
+          port: 7445
+
+# Configure cluster loopback, add host for bootstrap mirror
+  - |-
+    machine:
+      network:
+        extraHostEntries:
+          - ip: 172.19.82.10
+            aliases:
+              - hub.homelab.internal
+          - ip: ${clusterEndpointIP}
+            aliases:
+              - ${clusterDomain}.${rootDomain}
+
+# Cluster configuration
+  - |-
+    cluster:
+      allowSchedulingOnMasters: false
+      proxy:
+        disabled: true
+
+# ETCD configuration
+  - |-
+    cluster:
+      etcd:
+        advertisedSubnets:
+          - 10.50.16.0/20
+
+# Kubelet configuration
+  - |-
+    machine:
+      kubelet:
+        extraArgs:
+          rotate-server-certificates: "true"
+        nodeIP:
+          validSubnets:
+            - 10.50.16.0/20
+
+# Custom sysctls
+  - |-
+    machine:
+      sysctls:
+        fs.inotify.max_user_watches: "1048576"
+        fs.inotify.max_user_instances: "8192"
+
+# Enable DRBD
+  - |-
+    machine:
+      kernel:
+        modules:
+          - name: drbd
+            parameters:
+              - usermode_helper=disabled
+          - name: drbd_transport_tcp
+
+# Configure containerd and custom ca
+  - |-
+    machine:
+      files:
+        - content: |
+            -----BEGIN CERTIFICATE-----
+            MIIERjCCAy6gAwIBAgIUTws5n92b2MU6lxODY2/86ytkyf8wDQYJKoZIhvcNAQEL
+            BQAwFjEUMBIGA1UEAxMLUEtJIFJvb3QgQ0EwHhcNMjMxMjEzMDY0OTM1WhcNMzQw
+            MTA5MDY1MDA1WjAnMSUwIwYDVQQDExxWYXVsdCBJbnRlcm1lZGlhdGUgQXV0aG9y
+            aXR5MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz83NTuK+pRBvBTRC
+            v3HvkKDg8UcMkgRHrH3P5bdlj+dLtDA6P7JNE/+p6blIn9rfcNqjD9AIvmpW1mq/
+            G0ZNpR5e1T2nnVYI+7NRPHUavQVThxdzYN0rb59xkwc/Xe4sfDJ4gJZvIlwLrsiq
+            SagDohmtMsIQ5EUtwAqpi60pHAVypXsOT+Z9mYVpQWUw75Qg1XFRwE+hBPZeXmKJ
+            9v+OSVBlHYcnb5rHJl+5s84Z/jkf4mBmwbYOmcbN5OQQgQDWM6nNFIkKxXf9UdaW
+            HpBKD90DemCAPXnUe11MlU1wD+wwemsc3tKUfn36pPHdGabShaw4dPS273f68SP7
+            vlM4aQIDAQABo4IBeTCCAXUwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMB
+            Af8wHQYDVR0OBBYEFCtYtedNcnlD5nWKl1FIOaq0A/urMB8GA1UdIwQYMBaAFHqm
+            5L5geKbwYeyEyMThyX5xVOZwMIGnBggrBgEFBQcBAQSBmjCBlzA0BggrBgEFBQcw
+            AYYoaHR0cHM6Ly92bHQuaG9tZWxhYi5pbnRlcm5hbC92MS9wa2kvb2NzcDBfBggr
+            BgEFBQcwAoZTaHR0cHM6Ly92bHQuaG9tZWxhYi5pbnRlcm5hbC92MS9wa2kvaXNz
+            dWVyLzU5ZmM0NGM4LWRjZDEtOGI1MC05MzQ0LTk0MGI2ZTUxNTczOS9kZXIwaAYD
+            VR0fBGEwXzBdoFugWYZXaHR0cHM6Ly92bHQuaG9tZWxhYi5pbnRlcm5hbC92MS9w
+            a2kvaXNzdWVyLzU5ZmM0NGM4LWRjZDEtOGI1MC05MzQ0LTk0MGI2ZTUxNTczOS9j
+            cmwvZGVyMA0GCSqGSIb3DQEBCwUAA4IBAQAlINyqCix13c9rBLm4sDxNpJgw6Gl5
+            NYR8gS6RJnU08gisuYoE/YplrskqoQfvnfUzae//To2pNEmd1O0rWtsI/Zdk2ZLg
+            N11ogakm1DYhu4xWLblkZVL73ZDtdD5q7gG2HDiW/XNs9h5eQ2LvVs648pCZ0uDp
+            r7eNRYxxQSRerjsL/HTWVZoXYg2iu84Rl41Y7pOZk7hYbTHpcLXMHagpU7gOaaID
+            7HwzNc4Giobay78Dp5MIkZqLN7q7mMR43Ev+nlzNz11yVlJ3tyZE5Q5F5Qo8C4MJ
+            638CtwvyMCj5K0tCwulIhRA9xR2K+1VE+VeMd2Z4E+obQammJ8KXAXJv
+            -----END CERTIFICATE-----
+            -----BEGIN CERTIFICATE-----
+            MIIDHTCCAgWgAwIBAgIUPt8nd24EaKeEucKyOQvlUDFtGREwDQYJKoZIhvcNAQEL
+            BQAwFjEUMBIGA1UEAxMLUEtJIFJvb3QgQ0EwHhcNMjMxMjEzMDY0OTM0WhcNMzQw
+            MTA5MDY1MDA0WjAWMRQwEgYDVQQDEwtQS0kgUm9vdCBDQTCCASIwDQYJKoZIhvcN
+            AQEBBQADggEPADCCAQoCggEBAKq7rW+FlnivisHtsfOiaMUwk7bznvi7aBTXQSdq
+            6mMEr0zBvw2zm84rKRaK+qqOVFgiBaozQeGMImzipJ7NnkJgjmhtiakxRScwTFA/
+            S90pQo75ADRlyOVVnOv7GLLPBmpDKvwWh4iTiPsI0DxLHwVToXlqOMpc8+E9Btwj
+            R5s3Vzl+t1V10+YiBE+62fojNLW/NfOjSUQ5FLBNcYWJlNproVJwtWIRaC7uwqFx
+            cC1t258o0IaMuBkjrW2QnsbUskF8ZnkHITx0tdtr6AQRQ08ph+qBRc9VTlIGMeAA
+            hp+WM91vCamhuSB7RXvBiY54a67Lj+8w3L6aOLpBfqMERikCAwEAAaNjMGEwDgYD
+            VR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFHqm5L5geKbw
+            YeyEyMThyX5xVOZwMB8GA1UdIwQYMBaAFHqm5L5geKbwYeyEyMThyX5xVOZwMA0G
+            CSqGSIb3DQEBCwUAA4IBAQB+KYn2g91CHuw+p1+VF/GjE7ZxBEinbd3uLUscmtT6
+            4ZRsjZtC37WdvCHiAZqlLj5/cFqHqBaukP22ROR3xZxZ3g1c+uA+2Hcj22W4KVRd
+            S/wBmthcuxNAFv8YLZWxJxM4rdyh6KeXNk9UkdERCyM8poDPM6b+8glF+Qm93gaq
+            yVitQ9WoE+RvEPlIYNlzF3RTwFszFR3ljKXZHqtWwHRM1cH1qQjSl+dBIKjhS5DC
+            IPFtD2THqXEvDy1CKVyrTwNIMLs1zMMi0u46h62n9GLCg5NZq476+kTOCrGgKKVf
+            gD4/W/Hiv1z5sc696k+8hFgzGW4ssDezwC4gvG2V6yPS
+            -----END CERTIFICATE-----
+          permissions: 0644
+          path: /etc/ssl/certs/ca-certificates
+          op: append
+        - content: |
+            [plugins]
+              [plugins."io.containerd.grpc.v1.cri"]
+                sandbox_image = "registry.k8s.io/pause:3.8"
+                enable_unprivileged_ports = true
+                enable_unprivileged_icmp = true
+          path: /etc/cri/conf.d/20-customization.part
+          op: create
+
+# Configure pull through cache
+# enable 'Allow Anonymous Access' in jfrog
+  - |-
+    machine:
+      registries:
+        mirrors:
+          docker.io:
+            endpoints:
+              - https://hub.homelab.internal/docker.io
+            overridePath: true
+          ghcr.io:
+            endpoints:
+              - https://hub.homelab.internal/ghcr.io
+            overridePath: true
+          gcr.io:
+            endpoints:
+              - https://hub.homelab.internal/gcr.io
+            overridePath: true
+          registry.k8s.io:
+            endpoints:
+              - https://hub.homelab.internal/k8s.io
+            overridePath: true
+
+controlPlane:
+  schematic: &talos-image
+    customization:
+      extraKernelArgs:
+        - net.ifnames=0
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/drbd
+
+  patches:
+    - |-
+      - op: replace
+        path: /cluster/apiServer/admissionControl/0/configuration/exemptions/namespaces
+        value:
+          - kube-system
+          - rook-ceph
+
+worker:
+  schematic: *talos-image
