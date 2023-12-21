@@ -131,6 +131,10 @@ patches:
     machine:
       network:
         extraHostEntries:
+          - ip: 172.19.82.10
+            aliases:
+              - api.k8s.homelab.internal
+              - hub.homelab.internal
           - ip: ${clusterEndpointIP}
             aliases:
               - ${clusterDomain}.${rootDomain}
@@ -141,6 +145,12 @@ patches:
       allowSchedulingOnMasters: false
       proxy:
         disabled: true
+      discovery:
+        enabled: true
+        registries:
+            kubernetes:
+              disabled: true
+            service: https://api.k8s.homelab.internal/
 
 # Cluster network configuration
 ## each cluster using three xx.0/20, first = node, second = pod, third = svc;
@@ -201,19 +211,19 @@ patches:
         mirrors:
           docker.io:
             endpoints:
-              - http://172.19.82.10:5000
+              - http://hub.homelab.internal
           ghcr.io:
             endpoints:
-              - http://172.19.82.10:5000
+              - http://hub.homelab.internal
           gcr.io:
             endpoints:
-              - http://172.19.82.10:5000
+              - http://hub.homelab.internal
           registry.k8s.io:
             endpoints:
-              - http://172.19.82.10:5000
+              - http://hub.homelab.internal
           quay.io:
             endpoints:
-              - http://172.19.82.10:5000
+              - http://hub.homelab.internal
 
 controlPlane:
   schematic: &talos-image
