@@ -11,7 +11,7 @@ cniConfig:
   name: none
 
 additionalApiServerCertSans: &san
-  - "127.0.0.1" # KubePrism
+  - localhost
   - ${clusterEndpointIP}
   - ${clusterDomain}.${rootDomain}
 additionalMachineCertSans: *san
@@ -26,11 +26,11 @@ nodes:
           busPath: "0*"
         dhcp: false
         mtu: 1500
-        addresses:
-          - 172.19.82.31/24
-        routes:
+        routes: &gateway
           - network: 0.0.0.0/0
             gateway: 172.19.82.1
+        addresses:
+          - 172.19.82.31/24
 
   - hostname: ${clusterName}-master-02
     ipAddress: 172.19.82.32
@@ -41,9 +41,7 @@ nodes:
           busPath: "0*"
         dhcp: false
         mtu: 1500
-        routes: &gateway
-          - network: 0.0.0.0/0
-            gateway: 172.19.82.1
+        routes: *gateway
         addresses:
           - 172.19.82.32/24
 
@@ -99,7 +97,7 @@ nodes:
           - 172.19.82.36/24
 
 patches:
-# disable dhcp search domain
+# Disable DHCP search domain
   - |-
     machine:
       network:
@@ -128,14 +126,11 @@ patches:
           enabled: true
           port: 7445
 
-# Configure cluster loopback, add host for bootstrap mirror
+# Configure cluster loopback
   - |-
     machine:
       network:
         extraHostEntries:
-          - ip: 172.19.82.10
-            aliases:
-              - hub.homelab.internal
           - ip: ${clusterEndpointIP}
             aliases:
               - ${clusterDomain}.${rootDomain}
@@ -148,13 +143,15 @@ patches:
         disabled: true
 
 # Cluster network configuration
+## each cluster using three xx.0/20, first = node, second = pod, third = svc;
+## exclude 10.10.0.0/20, 10.10.10.10 save for cluster-mesh
   - |-
     cluster:
       network:
         podSubnets:
-          - 10.10.16.0/20
-        serviceSubnets:
           - 10.10.32.0/20
+        serviceSubnets:
+          - 10.10.48.0/20
 
 # Kubelet configuration
   - |-
@@ -164,7 +161,7 @@ patches:
           rotate-server-certificates: "true"
         nodeIP:
           validSubnets:
-            - 10.10.0.0/16
+            - 172.19.82.0/24
 
 # Custom sysctls
   - |-
@@ -183,89 +180,40 @@ patches:
               - usermode_helper=disabled
           - name: drbd_transport_tcp
 
-# Configure containerd and custom ca
+# Configure containerd
+## Allowing non-root containers to listen ports < 1024; Allowing ICMP on containers without any capabilities
   - |-
     machine:
       files:
         - content: |
-            -----BEGIN CERTIFICATE-----
-            MIIERjCCAy6gAwIBAgIUTws5n92b2MU6lxODY2/86ytkyf8wDQYJKoZIhvcNAQEL
-            BQAwFjEUMBIGA1UEAxMLUEtJIFJvb3QgQ0EwHhcNMjMxMjEzMDY0OTM1WhcNMzQw
-            MTA5MDY1MDA1WjAnMSUwIwYDVQQDExxWYXVsdCBJbnRlcm1lZGlhdGUgQXV0aG9y
-            aXR5MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz83NTuK+pRBvBTRC
-            v3HvkKDg8UcMkgRHrH3P5bdlj+dLtDA6P7JNE/+p6blIn9rfcNqjD9AIvmpW1mq/
-            G0ZNpR5e1T2nnVYI+7NRPHUavQVThxdzYN0rb59xkwc/Xe4sfDJ4gJZvIlwLrsiq
-            SagDohmtMsIQ5EUtwAqpi60pHAVypXsOT+Z9mYVpQWUw75Qg1XFRwE+hBPZeXmKJ
-            9v+OSVBlHYcnb5rHJl+5s84Z/jkf4mBmwbYOmcbN5OQQgQDWM6nNFIkKxXf9UdaW
-            HpBKD90DemCAPXnUe11MlU1wD+wwemsc3tKUfn36pPHdGabShaw4dPS273f68SP7
-            vlM4aQIDAQABo4IBeTCCAXUwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMB
-            Af8wHQYDVR0OBBYEFCtYtedNcnlD5nWKl1FIOaq0A/urMB8GA1UdIwQYMBaAFHqm
-            5L5geKbwYeyEyMThyX5xVOZwMIGnBggrBgEFBQcBAQSBmjCBlzA0BggrBgEFBQcw
-            AYYoaHR0cHM6Ly92bHQuaG9tZWxhYi5pbnRlcm5hbC92MS9wa2kvb2NzcDBfBggr
-            BgEFBQcwAoZTaHR0cHM6Ly92bHQuaG9tZWxhYi5pbnRlcm5hbC92MS9wa2kvaXNz
-            dWVyLzU5ZmM0NGM4LWRjZDEtOGI1MC05MzQ0LTk0MGI2ZTUxNTczOS9kZXIwaAYD
-            VR0fBGEwXzBdoFugWYZXaHR0cHM6Ly92bHQuaG9tZWxhYi5pbnRlcm5hbC92MS9w
-            a2kvaXNzdWVyLzU5ZmM0NGM4LWRjZDEtOGI1MC05MzQ0LTk0MGI2ZTUxNTczOS9j
-            cmwvZGVyMA0GCSqGSIb3DQEBCwUAA4IBAQAlINyqCix13c9rBLm4sDxNpJgw6Gl5
-            NYR8gS6RJnU08gisuYoE/YplrskqoQfvnfUzae//To2pNEmd1O0rWtsI/Zdk2ZLg
-            N11ogakm1DYhu4xWLblkZVL73ZDtdD5q7gG2HDiW/XNs9h5eQ2LvVs648pCZ0uDp
-            r7eNRYxxQSRerjsL/HTWVZoXYg2iu84Rl41Y7pOZk7hYbTHpcLXMHagpU7gOaaID
-            7HwzNc4Giobay78Dp5MIkZqLN7q7mMR43Ev+nlzNz11yVlJ3tyZE5Q5F5Qo8C4MJ
-            638CtwvyMCj5K0tCwulIhRA9xR2K+1VE+VeMd2Z4E+obQammJ8KXAXJv
-            -----END CERTIFICATE-----
-            -----BEGIN CERTIFICATE-----
-            MIIDHTCCAgWgAwIBAgIUPt8nd24EaKeEucKyOQvlUDFtGREwDQYJKoZIhvcNAQEL
-            BQAwFjEUMBIGA1UEAxMLUEtJIFJvb3QgQ0EwHhcNMjMxMjEzMDY0OTM0WhcNMzQw
-            MTA5MDY1MDA0WjAWMRQwEgYDVQQDEwtQS0kgUm9vdCBDQTCCASIwDQYJKoZIhvcN
-            AQEBBQADggEPADCCAQoCggEBAKq7rW+FlnivisHtsfOiaMUwk7bznvi7aBTXQSdq
-            6mMEr0zBvw2zm84rKRaK+qqOVFgiBaozQeGMImzipJ7NnkJgjmhtiakxRScwTFA/
-            S90pQo75ADRlyOVVnOv7GLLPBmpDKvwWh4iTiPsI0DxLHwVToXlqOMpc8+E9Btwj
-            R5s3Vzl+t1V10+YiBE+62fojNLW/NfOjSUQ5FLBNcYWJlNproVJwtWIRaC7uwqFx
-            cC1t258o0IaMuBkjrW2QnsbUskF8ZnkHITx0tdtr6AQRQ08ph+qBRc9VTlIGMeAA
-            hp+WM91vCamhuSB7RXvBiY54a67Lj+8w3L6aOLpBfqMERikCAwEAAaNjMGEwDgYD
-            VR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFHqm5L5geKbw
-            YeyEyMThyX5xVOZwMB8GA1UdIwQYMBaAFHqm5L5geKbwYeyEyMThyX5xVOZwMA0G
-            CSqGSIb3DQEBCwUAA4IBAQB+KYn2g91CHuw+p1+VF/GjE7ZxBEinbd3uLUscmtT6
-            4ZRsjZtC37WdvCHiAZqlLj5/cFqHqBaukP22ROR3xZxZ3g1c+uA+2Hcj22W4KVRd
-            S/wBmthcuxNAFv8YLZWxJxM4rdyh6KeXNk9UkdERCyM8poDPM6b+8glF+Qm93gaq
-            yVitQ9WoE+RvEPlIYNlzF3RTwFszFR3ljKXZHqtWwHRM1cH1qQjSl+dBIKjhS5DC
-            IPFtD2THqXEvDy1CKVyrTwNIMLs1zMMi0u46h62n9GLCg5NZq476+kTOCrGgKKVf
-            gD4/W/Hiv1z5sc696k+8hFgzGW4ssDezwC4gvG2V6yPS
-            -----END CERTIFICATE-----
-          permissions: 0644
-          path: /etc/ssl/certs/ca-certificates
-          op: append
-        - content: |
             [plugins]
               [plugins."io.containerd.grpc.v1.cri"]
-                sandbox_image = "registry.k8s.io/pause:3.8"
+                sandbox_image = "hub.homelab.internal/k8s.io/pause:3.8"
                 enable_unprivileged_ports = true
                 enable_unprivileged_icmp = true
           path: /etc/cri/conf.d/20-customization.part
           op: create
 
-# Configure pull through cache
-# enable 'Allow Anonymous Access' in jfrog
+# Configure pull through cache, change to zot
   - |-
     machine:
       registries:
         mirrors:
           docker.io:
             endpoints:
-              - https://hub.homelab.internal/docker.io
-            overridePath: true
+              - http://172.19.82.10:5000
           ghcr.io:
             endpoints:
-              - https://hub.homelab.internal/ghcr.io
-            overridePath: true
+              - http://172.19.82.10:5000
           gcr.io:
             endpoints:
-              - https://hub.homelab.internal/gcr.io
-            overridePath: true
+              - http://172.19.82.10:5000
           registry.k8s.io:
             endpoints:
-              - https://hub.homelab.internal/k8s.io
-            overridePath: true
+              - http://172.19.82.10:5000
+          quay.io:
+            endpoints:
+              - http://172.19.82.10:5000
 
 controlPlane:
   schematic: &talos-image
@@ -282,7 +230,7 @@ controlPlane:
       cluster:
         etcd:
           advertisedSubnets:
-            - 10.10.0.0/16
+            - 172.19.82.0/24
 
     # Prepare for Rook-CEPH
     - |-
