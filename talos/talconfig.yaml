@@ -211,19 +211,19 @@ patches:
         mirrors:
           docker.io:
             endpoints:
-              - http://hub.homelab.internal
+              - http://172.19.82.10:5000/docker.io
           ghcr.io:
             endpoints:
-              - http://hub.homelab.internal
+              - http://172.19.82.10:5000/ghcr.io
           gcr.io:
             endpoints:
-              - http://hub.homelab.internal
+              - http://172.19.82.10:5000/gcr.io
           registry.k8s.io:
             endpoints:
-              - http://hub.homelab.internal
+              - http://172.19.82.10:5000/registry.k8s.io
           quay.io:
             endpoints:
-              - http://hub.homelab.internal
+              - http://172.19.82.10:5000/quay.io
 
 controlPlane:
   schematic: &talos-image
