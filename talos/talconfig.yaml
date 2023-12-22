@@ -211,22 +211,28 @@ patches:
         mirrors:
           docker.io:
             endpoints:
-              - http://172.19.82.10:5000/docker.io
+              - http://172.19.82.10:5000/v2/docker.io
+            overridePath: true
           ghcr.io:
             endpoints:
-              - http://172.19.82.10:5000/ghcr.io
+              - http://172.19.82.10:5000/v2/ghcr.io
+            overridePath: true
           gcr.io:
             endpoints:
-              - http://172.19.82.10:5000/gcr.io
+              - http://172.19.82.10:5000/v2/gcr.io
+            overridePath: true
           registry.k8s.io:
             endpoints:
-              - http://172.19.82.10:5000/registry.k8s.io
+              - http://172.19.82.10:5000/v2/registry.k8s.io
+            overridePath: true
           quay.io:
             endpoints:
-              - http://172.19.82.10:5000/quay.io
+              - http://172.19.82.10:5000/v2/quay.io
+            overridePath: true
           public.ecr.aws:
             endpoints:
-              - http://172.19.82.10:5000/public.ecr.aws
+              - http://172.19.82.10:5000/v2/public.ecr.aws
+            overridePath: true
 
 controlPlane:
   schematic: &talos-image
