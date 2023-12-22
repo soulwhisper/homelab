@@ -18,7 +18,7 @@ additionalMachineCertSans: *san
 
 nodes:
   - hostname: ${clusterName}-master-01
-    ipAddress: 172.19.82.31
+    ipAddress: 10.10.16.2
     installDisk: /dev/sda
     controlPlane: true
     networkInterfaces:
@@ -28,12 +28,12 @@ nodes:
         mtu: 1500
         routes: &gateway
           - network: 0.0.0.0/0
-            gateway: 172.19.82.1
+            gateway: 10.10.16.1
         addresses:
-          - 172.19.82.31/24
+          - 10.10.16.2/20
 
   - hostname: ${clusterName}-master-02
-    ipAddress: 172.19.82.32
+    ipAddress: 10.10.16.3
     installDisk: /dev/sda
     controlPlane: true
     networkInterfaces:
@@ -43,10 +43,10 @@ nodes:
         mtu: 1500
         routes: *gateway
         addresses:
-          - 172.19.82.32/24
+          - 10.10.16.3/20
 
   - hostname: ${clusterName}-master-03
-    ipAddress: 172.19.82.33
+    ipAddress: 10.10.16.4
     installDisk: /dev/sda
     controlPlane: true
     networkInterfaces:
@@ -56,10 +56,10 @@ nodes:
         mtu: 1500
         routes: *gateway
         addresses:
-          - 172.19.82.33/24
+          - 10.10.16.4/20
 
   - hostname: ${clusterName}-worker-01
-    ipAddress: 172.19.82.34
+    ipAddress: 10.10.16.5
     installDisk: /dev/sda
     controlPlane: false
     networkInterfaces:
@@ -68,10 +68,10 @@ nodes:
         mtu: 1500
         routes: *gateway
         addresses:
-          - 172.19.82.34/24
+          - 10.10.16.5/20
 
   - hostname: ${clusterName}-worker-02
-    ipAddress: 172.19.82.35
+    ipAddress: 10.10.16.6
     installDisk: /dev/sda
     controlPlane: false
     networkInterfaces:
@@ -81,10 +81,10 @@ nodes:
         mtu: 1500
         routes: *gateway
         addresses:
-          - 172.19.82.35/24
+          - 10.10.16.6/20
 
   - hostname: ${clusterName}-worker-03
-    ipAddress: 172.19.82.36
+    ipAddress: 10.10.16.7
     installDisk: /dev/sda
     controlPlane: false
     networkInterfaces:
@@ -94,7 +94,7 @@ nodes:
         mtu: 1500
         routes: *gateway
         addresses:
-          - 172.19.82.36/24
+          - 10.10.16.7/20
 
 patches:
 # Disable DHCP search domain
@@ -108,7 +108,7 @@ patches:
     machine:
       network:
         nameservers:
-          - 172.19.82.10
+          - 10.10.10.10
 
 # Configure NTP
   - |-
@@ -131,10 +131,6 @@ patches:
     machine:
       network:
         extraHostEntries:
-          - ip: 172.19.82.10
-            aliases:
-              - api.k8s.homelab.internal
-              - hub.homelab.internal
           - ip: ${clusterEndpointIP}
             aliases:
               - ${clusterDomain}.${rootDomain}
@@ -171,7 +167,7 @@ patches:
           rotate-server-certificates: "true"
         nodeIP:
           validSubnets:
-            - 172.19.82.0/24
+            - 10.10.16.0/20
 
 # Custom sysctls
   - |-
@@ -211,27 +207,27 @@ patches:
         mirrors:
           docker.io:
             endpoints:
-              - http://172.19.82.10:5000/v2/docker.io
+              - http://10.10.10.10:5000/v2/docker.io
             overridePath: true
           ghcr.io:
             endpoints:
-              - http://172.19.82.10:5000/v2/ghcr.io
+              - http://10.10.10.10:5000/v2/ghcr.io
             overridePath: true
           gcr.io:
             endpoints:
-              - http://172.19.82.10:5000/v2/gcr.io
+              - http://10.10.10.10:5000/v2/gcr.io
             overridePath: true
           registry.k8s.io:
             endpoints:
-              - http://172.19.82.10:5000/v2/registry.k8s.io
+              - http://10.10.10.10:5000/v2/registry.k8s.io
             overridePath: true
           quay.io:
             endpoints:
-              - http://172.19.82.10:5000/v2/quay.io
+              - http://10.10.10.10:5000/v2/quay.io
             overridePath: true
           public.ecr.aws:
             endpoints:
-              - http://172.19.82.10:5000/v2/public.ecr.aws
+              - http://10.10.10.10:5000/v2/public.ecr.aws
             overridePath: true
 
 controlPlane:
@@ -249,7 +245,7 @@ controlPlane:
       cluster:
         etcd:
           advertisedSubnets:
-            - 172.19.82.0/24
+            - 10.10.16.0/20
 
     # Prepare for Rook-CEPH
     - |-
