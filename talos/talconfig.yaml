@@ -224,6 +224,9 @@ patches:
           quay.io:
             endpoints:
               - http://172.19.82.10:5000/quay.io
+          public.ecr.aws:
+            endpoints:
+              - http://172.19.82.10:5000/public.ecr.aws
 
 controlPlane:
   schematic: &talos-image
