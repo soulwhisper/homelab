@@ -146,7 +146,9 @@ patches:
         registries:
             kubernetes:
               disabled: true
-            service: https://api.k8s.homelab.internal/
+            service:
+              disabled: false
+              endpoint: https://api.k8s.homelab.internal/
 
 # Cluster network configuration
 ## each cluster using three xx.0/20, first = node, second = pod, third = svc;
